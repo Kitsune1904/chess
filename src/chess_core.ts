@@ -264,11 +264,9 @@ export const getRandomDesk = () => {
 
     const whiteCount = getRandomNum(1, figuresCount < 16 ? figuresCount : 16);
     const whiteAltCount = (getRandomNum(1, whiteCount < 8 ? whiteCount : 8));
-    const whitePawnCount = whiteCount - whiteAltCount;
 
     const blackCount = figuresCount - whiteCount;
     const blackAltCount = (getRandomNum(1, blackCount < 8 ? blackCount : 8));
-    const blackPawnCount = blackCount - blackAltCount;
 
 
     const whiteFiguresList: string[] = getRandomFiguresList(whiteAltCount, whiteCount);
