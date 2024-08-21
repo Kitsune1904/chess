@@ -270,10 +270,10 @@ export const getRandomDesk = () => {
 
 
     const whiteFiguresList: string[] = getRandomFiguresList(whiteAltCount, whiteCount);
-    const blackFiguresList = getRandomFiguresList(blackAltCount, blackCount);
+    const blackFiguresList: string[] = getRandomFiguresList(blackAltCount, blackCount);
 
-    const white = getCellState(whiteFiguresList, "white");
-    const black = getCellState(blackFiguresList, "black");
+    const white: CellState[] = getCellState(whiteFiguresList, "white");
+    const black: CellState[] = getCellState(blackFiguresList, "black");
 
     const resultArr: CellState[] = [...white, ...black];
 
@@ -286,7 +286,7 @@ export const getRandomDesk = () => {
     const randomArr: CellState[] = shuffle([...resultArr]) as CellState[];
 
     let counter = 0;
-    const matrix = new Array(8).fill(0).map(() => new Array(8));
+    const matrix: CellState[][] = new Array(8).fill(0).map(() => new Array(8));
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
             matrix[row][col] = randomArr[counter++];
