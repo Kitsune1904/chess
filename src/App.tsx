@@ -14,7 +14,9 @@ export const GeneralContext: React.Context<GeneralContextType|null> = createCont
 function App() {
     const [deskMemory, setDeskMemory] = useState<ChessDesk>(createStartDesk());
     const [isGamerColorWhite, setGamerColor] = useState<boolean>(true)
+
     const box: React.MutableRefObject<HTMLDivElement|null> = React.useRef<HTMLDivElement|null>(null); // константа, хранящая элемент разметки или null
+
     const callBack: (() => void) = React.useCallback(() => { // константа, что хранит колбэк МЕЖДУ РЕНДЕРАМИ! (т.е она мемоизирована между ними)
         const desk: HTMLElement | null = document.getElementById("chess_desk"); // константа с элементом по айди chess_desk (замена useRef для HTML элементов (работает только в эффектах и колбэках))
         if (!box.current || !desk) { // если какая-то из констант пустая - досвидос (общий паттерн проверок ПЕРЕД функцией, подходит для случаев валидации чего-либо, тогда они идут один под другим - экономия памяти)
@@ -28,6 +30,7 @@ function App() {
         desk.style.width = minimalSize.toString() + 'px' // назначение СТИЛЕВОЙ ширины деску по минимальной
         box.current!.style.flexDirection = fatherWidth < fatherHeight ? "column" : "row" // назначение СТИЛЕВОГО направления флекса, с учетом наименьшего размера из двух (высоты или ширины)
     }, []); // зависимостей нет, т.е. исполнение только на встраивание
+
     useEffect(() => {
         callBack(); // вызывается на момент встраивания
         window.addEventListener('resize', callBack); // следит за размерами окна и вызывает callBack

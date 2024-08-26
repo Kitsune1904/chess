@@ -1,4 +1,4 @@
-import React, {useContext} from "react";
+import React, {useCallback, useContext, useEffect, useMemo, useState} from "react";
 import {CellFigure, CellState, CellStatus, ChessDesk, getRenderSource, HelperCell} from "./chess_core.ts";
 import {GeneralContext, GeneralContextType} from "./App.tsx";
 
@@ -11,6 +11,8 @@ export interface IChessCellProps {
     isBlackBackground?: boolean,
     data?: CellState,
     cellType: HelperCell,
+    isHighlighted?: boolean;
+    onClick?: () => void
     x: number,
     y: number
 }
@@ -21,8 +23,53 @@ export interface IChessFigureProps {
 }
 
 export const Desk = (props: IDeskProps): React.ReactNode => {
-    const gamerSettings: GeneralContextType = useContext(GeneralContext)!
-    const sources: IChessCellProps[][] = getRenderSource(props.desk, gamerSettings.gamerIsWhiteColor)
+    const [selectedCell, setSelectedCell] = useState<IChessCellProps | null>(null);
+    const [sources, setSources] = useState<IChessCellProps[][]>([]);
+
+    const gamerSettings: GeneralContextType = useContext(GeneralContext)!;
+
+    const currentPlayerColor: CellStatus.WHITE | CellStatus.BLACK = useMemo(() =>
+        gamerSettings.gamerIsWhiteColor ?
+            CellStatus.WHITE :
+            CellStatus.BLACK
+        , [gamerSettings.gamerIsWhiteColor]);
+
+    useEffect((): void => {
+        setSources(getRenderSource(props.desk, gamerSettings.gamerIsWhiteColor));
+    }, [props.desk, gamerSettings.gamerIsWhiteColor]);
+
+    const handleCellClick = useCallback((cell: IChessCellProps) => {
+        const clickedFigureStatus: CellStatus = cell.data!.status
+
+        if (selectedCell) {
+            const targetFigureStatus: CellStatus= cell.data!.status;
+            const isSamePosition: boolean = selectedCell.x === cell.x && selectedCell.y === cell.y;
+
+            if (isSamePosition) {
+                setSelectedCell(null);
+            } else if (selectedCell.data?.status === currentPlayerColor && (targetFigureStatus !== currentPlayerColor || cell.data?.status === CellStatus.EMPTY)) {
+                const updatedSources: IChessCellProps[][] = [...sources];
+                updatedSources[selectedCell.y][selectedCell.x] = {
+                    ...selectedCell,
+                    data: { 
+                        status: CellStatus.EMPTY 
+                    }
+                };
+                updatedSources[cell.y][cell.x] = {
+                    ...cell,
+                    data: selectedCell.data
+                };
+
+                setSources(updatedSources);
+                setSelectedCell(null);
+            } else {
+                setSelectedCell(null);
+            }
+        } else if (clickedFigureStatus === currentPlayerColor) {
+            setSelectedCell(cell);
+        }
+    }, [selectedCell, currentPlayerColor, sources]);
+
     return (
         <div style={{
             height: '100%',
@@ -34,16 +81,18 @@ export const Desk = (props: IDeskProps): React.ReactNode => {
             justifyContent: 'stretch'
         }}>
             {sources.map((cells: IChessCellProps[], index: number): React.ReactNode => {
-                return (
-                        cells.map((cell: IChessCellProps, index2: number): React.ReactNode => {
-                            return (
-                                <ChessCell {...cell} key={index * 10 + index2}/>
-                            )
-                        })
-                );
+                return cells.map((cell: IChessCellProps, index2: number): React.ReactNode => {
+                    return (
+                        <ChessCell {...cell}
+                                   key={index * 10 + index2}
+                                   isHighlighted={selectedCell?.x === cell.x && selectedCell?.y === cell.y}
+                                   onClick={() => handleCellClick(cell)}
+                        />
+                    )
+                });
             })}
         </div>
-    )
+    );
 }
 
 
@@ -77,14 +126,25 @@ export const ChessFigure = (props: IChessFigureProps) => {
 export const ChessCell = (props: IChessCellProps): React.ReactNode => {
     const generalSetting: GeneralContextType = useContext(GeneralContext)!
     const numbers: string = !generalSetting.gamerIsWhiteColor ? " 12345678 " : " 87654321 ";
+
+    const backgroundColor = props.isHighlighted
+        ? 'green'
+        : props.isBlackBackground
+            ? "#3b0083"
+            : "#c2a4ff";
+
     switch (props.cellType){
         case HelperCell.EMPTY_ANGLE:
             return (<div style={{backgroundColor: '#b64600'}}></div>);
         case HelperCell.NUMBER:
-            return (<div style={{backgroundColor: '#b64600', alignSelf: 'center', textAlign: 'center'}}>{numbers[props.y]}</div>);
+            return (<div style={{backgroundColor: '#b64600', alignSelf: 'center', textAlign: 'center'}} >{numbers[props.y]}</div>);
         case HelperCell.LETTER:
             return (<div style={{backgroundColor: '#b64600', alignSelf: 'center', textAlign: "center"}}>{" ABCDEFGH "[props.x]}</div>);
         case HelperCell.REGULAR:
-            return (<div style={{backgroundColor: props.isBlackBackground ? "#3b0083" : "#c2a4ff"}}>{props.data?.status != CellStatus.EMPTY && <ChessFigure {...props.data!}/>}</div>)
+            return (
+                <div style={{ backgroundColor }}
+                     onClick={props.onClick}>
+                {props.data?.status != CellStatus.EMPTY && <ChessFigure {...props.data!}/>}
+                </div>)
     }
 }

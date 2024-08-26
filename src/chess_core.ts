@@ -259,7 +259,7 @@ function shuffle(array: string[] | CellState[]): string[] | CellState[] {
 }
 
 
-export const getRandomDesk = () => {
+export const getRandomDesk = (): ChessDesk => {
     const figuresCount = getRandomNum(10, 32);
 
     const whiteCount = getRandomNum(1, figuresCount < 16 ? figuresCount : 16);
@@ -293,23 +293,6 @@ export const getRandomDesk = () => {
         }
     }
 
-
-    // console.log(whiteFiguresList);
-    // console.log(blackFiguresList);
-    //
-    // console.log(white);
-    // console.log(black);
-    //
-    // console.log(resultArr);
-    // console.log(randomArr);
-    //
-    // console.log(matrix);
-    //
-    // console.log(figuresCount);
-    // console.log(whiteCount, whiteAltCount, whitePawnCount);
-    // console.log(blackCount, blackAltCount, blackPawnCount)
-
     return matrix
 }
 
-// getRandomDesk()
