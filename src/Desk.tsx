@@ -1,5 +1,5 @@
 import React, {useCallback, useContext, useMemo, useState} from "react";
-import { CellStatus, getRenderSource} from "./chess_core.ts";
+import { CellStatus } from "./chess_core.ts";
 import {GeneralContext, GeneralContextType} from "./App.tsx";
 import {ChessCell} from "./ChessCell.tsx";
 import {IChessCellProps, IDeskProps} from "./Types.ts";
@@ -51,7 +51,9 @@ export const Desk = (props: IDeskProps): React.ReactNode => {
                 }
                 console.log(desk)
                 gamerSettings.setDeskMemory(desk)
+/*
                 props.setSources(getRenderSource(desk,false));
+*/
                 setSelectedCell(null);
 
             } else {

@@ -1,7 +1,7 @@
 
 import './App.css'
 import * as React from "react";
-import {createContext, useCallback, useEffect, useState} from "react";
+import {createContext, useEffect, useState} from "react";
 import {Desk} from "./Desk.tsx";
 import {createStartDesk, getRandomDesk, getRenderSource} from "./chess_core.ts";
 import {ChessDesk, IChessCellProps} from "./Types.ts";
@@ -48,8 +48,16 @@ function App() {
 
 
     const handleSwitchPlayer = () => {
+        const deskData = [...sources];
+        const desk = new Array(8).fill(null).map(() => new Array(8).fill(null));
+        for (let col = 1; col < 9; col++) {
+            for (let row = 1; row < 9; row++) {
+                desk[col-1][row-1] = deskData[col][row].data;
+            }
+        }
+        setDeskMemory(desk)
         setGamerColor(!isGamerColorWhite);
-        setSources(getRenderSource(deskMemory, true));
+        setSources(getRenderSource(desk, true));
     }
 
     const handleRandomDesk = () => {
@@ -57,7 +65,6 @@ function App() {
         const randomDesk = getRandomDesk();
         setSources(getRenderSource(randomDesk));
     };
-
 
     return (
         <GeneralContext.Provider value={{gamerIsWhiteColor: isGamerColorWhite, setDeskMemory: setDeskMemory, deskMemory: deskMemory} }>

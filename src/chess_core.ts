@@ -170,7 +170,7 @@ export function getRenderSource(desk: ChessDesk, shouldRotate: boolean = true,  
         {cellType: HelperCell.EMPTY_ANGLE, x: 9, y: 0}
     ]
     // const datas: ChessDesk = getRotatedDesk(desk, isWhiteGamer);
-    const datas: ChessDesk = shouldRotate && isWhiteGamer ? getRotatedDesk(desk, isWhiteGamer) : desk;
+    const datas: ChessDesk = shouldRotate ? getRotatedDesk(desk, isWhiteGamer) : desk;
 
     const backgrounds: DeskBackground = getRotatedBackground(isWhiteGamer);
     for (let y = 1; y < 9; y++) {
