@@ -1,4 +1,4 @@
-import {IChessCellProps} from "./desk.tsx";
+import {CellState, ChessDesk, DeskBackground, IChessCellProps} from "./Types.ts";
 
 export enum CellFigure {
     PAWN = 0, //пешка
@@ -15,14 +15,20 @@ export enum CellStatus {
     BLACK
 }
 
-export type CellState = {
-    status: CellStatus,
-    figure?: CellFigure
+export enum HelperCell {
+    REGULAR = 0,
+    LETTER = 1,
+    NUMBER = 2,
+    EMPTY_ANGLE = 3
 }
 
+const altFiguresList: string[] = ["bishop", "bishop", "knight", "knight", "rook", "rook", "queen"];
 
-export type ChessDesk = CellState[][];
 
+/**
+ * Ф-ция создает стартовую игровую доску с полным набором фигур
+ * @returns ChessDesk
+ */
 export function createStartDesk(): ChessDesk {
     const desk: ChessDesk = new Array(8).fill(0).map(() => { // тут подразумевается 8 горизонтальных линий
         return new Array(8).fill(0).map(() => { // тут подразумевается 8 клеток в линии
@@ -99,8 +105,14 @@ export function createStartDesk(): ChessDesk {
     return desk;
 }
 
+
+/**
+ * Ф-ция при помощи которой происходит изменение сторон для фигур, в зависимости от цвета игрока
+ * @param desk
+ * @param isWhiteGamer
+ * @returns ChessDesk
+ */
 export function getRotatedDesk(desk: ChessDesk, isWhiteGamer: boolean): ChessDesk {
-    // console.log(desk)
     if (isWhiteGamer) {
         const desk2: ChessDesk = new Array(8).fill(0).map((): CellState[] => { // тут подразумевается 8 горизонтальных линий
             return new Array(8).fill(0).map((): CellState => { // тут подразумевается 8 клеток в линии
@@ -117,8 +129,11 @@ export function getRotatedDesk(desk: ChessDesk, isWhiteGamer: boolean): ChessDes
     return desk;
 }
 
-export type DeskBackground = boolean[][]; //черное true
-
+/**
+ * Ф-ция при помощи которой окрашиваются ячейки доски, в зависимости от того какой цвет у игрока
+ * @param isWhiteGamer
+ * @returns DeskBackground
+ */
 export function getRotatedBackground(isWhiteGamer: boolean): DeskBackground {
     const proto: DeskBackground = new Array(8).fill(0).map((): boolean[] => { // тут подразумевается 8 горизонтальных линий
         return new Array(8).fill(0).map((): boolean => { // тут подразумевается 8 клеток в линии
@@ -137,14 +152,15 @@ export function getRotatedBackground(isWhiteGamer: boolean): DeskBackground {
     return proto
 }
 
-export enum HelperCell {
-    REGULAR = 0,
-    LETTER = 1,
-    NUMBER = 2,
-    EMPTY_ANGLE = 3
-}
 
-export function getRenderSource(desk: ChessDesk, isWhiteGamer: boolean): IChessCellProps[][] {
+/**
+ * Ф-ция создает полную информацию о всей доске
+ * @param desk
+ * @param isWhiteGamer
+ * @param shouldRotate
+ * @returns IChessCellProps[][]
+ */
+export function getRenderSource(desk: ChessDesk, shouldRotate: boolean = true,  isWhiteGamer: boolean = true): IChessCellProps[][] {
     const result: IChessCellProps[][] = [];
     result[0] = [
         {cellType: HelperCell.EMPTY_ANGLE, x: 0, y: 0},
@@ -153,7 +169,9 @@ export function getRenderSource(desk: ChessDesk, isWhiteGamer: boolean): IChessC
         }),
         {cellType: HelperCell.EMPTY_ANGLE, x: 9, y: 0}
     ]
-    const datas: ChessDesk = getRotatedDesk(desk, isWhiteGamer);
+    // const datas: ChessDesk = getRotatedDesk(desk, isWhiteGamer);
+    const datas: ChessDesk = shouldRotate && isWhiteGamer ? getRotatedDesk(desk, isWhiteGamer) : desk;
+
     const backgrounds: DeskBackground = getRotatedBackground(isWhiteGamer);
     for (let y = 1; y < 9; y++) {
         result[y] = []
@@ -177,12 +195,37 @@ export function getRenderSource(desk: ChessDesk, isWhiteGamer: boolean): IChessC
     return result;
 }
 
+/**
+ * Ф-ция генератор рандомных чисел по определенному промежутку
+ * @param min
+ * @param max
+ * @returns number
+ */
 const getRandomNum = (min: number, max: number): number => {
     return Math.floor(Math.random() * (max - min) + min);
 }
 
-const altFiguresList: string[] = ["bishop", "bishop", "knight", "knight", "rook", "rook", "queen"];
+/**
+ * Ф-ция рандомизатор массива. Алгоритм "Тасование Фишера — Йетса"
+ * @param array
+ * @returns string[] | CellState[]
+ */
+function shuffle(array: string[] | CellState[]): string[] | CellState[] {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array
+}
 
+
+/**
+ * Ф-ция рандомизатор для старших фигур, рандомизирует старшие фигуры из массива и
+ * дополняет младшими по достижению нужного кол-ва фигур
+ * @param altCount
+ * @param figuresCount
+ * @returns string[] - массив строк с рандомно выбранными старшими фигурами и дополненными младшими
+ */
 const getRandomFiguresList = (altCount: number, figuresCount: number): string[] => {
     const arr = [];
     while (arr.length < figuresCount) {
@@ -201,6 +244,13 @@ const getRandomFiguresList = (altCount: number, figuresCount: number): string[] 
     return arr
 }
 
+/**
+ * Ф-ция которая создает массив обхектоыв по типу CellState, где отображена информация про
+ * цвет фигуры и саму фигуру
+ * @param arr
+ * @param color
+ * @returns CellState[]
+ */
 const getCellState = (arr: string[], color: string): CellState[] => {
     const colorScheme = color === "white" ? CellStatus.WHITE : CellStatus.BLACK;
     const arrWithState = [];
@@ -248,17 +298,10 @@ const getCellState = (arr: string[], color: string): CellState[] => {
 }
 
 
-
-//алгоритм "Тасование Фишера — Йетса"
-function shuffle(array: string[] | CellState[]): string[] | CellState[] {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array
-}
-
-
+/**
+ * Ф-ция создает двумерный массив, в котором записана рандомизированная информация о клетках доски
+ * @returns ChessDesk
+ */
 export const getRandomDesk = (): ChessDesk => {
     const figuresCount = getRandomNum(10, 32);
 

@@ -1,19 +1,23 @@
 
 import './App.css'
 import * as React from "react";
-import {createContext, useEffect, useState} from "react";
-import {Desk} from "./desk.tsx";
-import {ChessDesk, createStartDesk, getRandomDesk} from "./chess_core.ts";
+import {createContext, useCallback, useEffect, useState} from "react";
+import {Desk} from "./Desk.tsx";
+import {createStartDesk, getRandomDesk, getRenderSource} from "./chess_core.ts";
+import {ChessDesk, IChessCellProps} from "./Types.ts";
 
 export type GeneralContextType = {
     gamerIsWhiteColor: boolean;
-    setDeskMemory: (desk:ChessDesk) => void
+    setDeskMemory: (desk:ChessDesk) => void;
+    deskMemory: ChessDesk;
 }
 export const GeneralContext: React.Context<GeneralContextType|null> = createContext<GeneralContextType|null>(null)
 
 function App() {
     const [deskMemory, setDeskMemory] = useState<ChessDesk>(createStartDesk());
-    const [isGamerColorWhite, setGamerColor] = useState<boolean>(true)
+    const [isGamerColorWhite, setGamerColor] = useState<boolean>(true);
+
+    const [sources, setSources] = useState<IChessCellProps[][]>(getRenderSource(deskMemory));
 
     const box: React.MutableRefObject<HTMLDivElement|null> = React.useRef<HTMLDivElement|null>(null); // константа, хранящая элемент разметки или null
 
@@ -37,18 +41,36 @@ function App() {
         return () => window.removeEventListener('resize', callBack) // очистка по демонтажу от события
     }, [callBack]) // зависимость на создание колбэка (т.е. пока он там создан не будет, не пойдет)
 
+    /*useEffect(() => {
+        setSources(getRenderSource(deskMemory, isGamerColorWhite, shouldRotate));
+    }, [deskMemory, isGamerColorWhite, shouldRotate]);*/
+
+
+
+    const handleSwitchPlayer = () => {
+        setGamerColor(!isGamerColorWhite);
+        setSources(getRenderSource(deskMemory, true));
+    }
+
+    const handleRandomDesk = () => {
+        console.log(isGamerColorWhite)
+        const randomDesk = getRandomDesk();
+        setSources(getRenderSource(randomDesk));
+    };
+
+
     return (
-        <GeneralContext.Provider value={{gamerIsWhiteColor: isGamerColorWhite, setDeskMemory: setDeskMemory}}>
+        <GeneralContext.Provider value={{gamerIsWhiteColor: isGamerColorWhite, setDeskMemory: setDeskMemory, deskMemory: deskMemory} }>
             <div ref={box} style={{display: "flex", flexWrap: "nowrap", alignItems: 'stretch', alignContent: 'stretch', width: '100%', height: '100%', flexDirection: "row"}}>
                 <div style={{backgroundColor: 'red', flexGrow: 1}}>
 
                 </div>
                 <div id="chess_desk" style={{backgroundColor: '#b64600'}}>
-                    <Desk desk={deskMemory}></Desk>
+                    <Desk desk={deskMemory} sources={sources} setSources={setSources}></Desk>
                 </div>
                 <div style={{backgroundColor: 'blue', flexGrow: 1}}>
-                    <button onClick={() => setGamerColor(!isGamerColorWhite)}>Сменить игрока</button>
-                    <button onClick={() => setDeskMemory(getRandomDesk)}>Рандом</button>
+                    <button onClick={handleSwitchPlayer}>Сменить игрока</button>
+                    <button onClick={handleRandomDesk}>Рандом</button>
                 </div>
             </div>
         </GeneralContext.Provider>
