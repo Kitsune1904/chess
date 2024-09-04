@@ -25,7 +25,7 @@ export const ChessCell = (props: IChessCellProps): React.ReactNode => {
             return (
                 <div style={{ backgroundColor }}
                      onClick={props.onClick}>
-                    {props.data?.status != CellStatus.EMPTY && <ChessFigure {...props.data!}/>}
+                    {props.data?.status !== CellStatus.EMPTY && <ChessFigure {...props.data!}/>}
                 </div>)
     }
 }

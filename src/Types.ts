@@ -21,7 +21,22 @@ export interface IChessCellProps {
     data?: CellState,
     cellType: HelperCell,
     isHighlighted?: boolean;
-    onClick?: () => void
+    onClick?: () => void,
+    // prevX?: number,
+    // prevY?: number,
     x: number,
     y: number
+}
+
+export type ParsedCell = {
+    notation: string;
+    // prevX?: number,
+    // prevY?: number,
+    x: number;
+    y: number;
+}
+
+export type StepsData = {
+    steps: ParsedCell[],
+    eatenFigures: ParsedCell[]
 }

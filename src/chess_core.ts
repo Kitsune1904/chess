@@ -1,4 +1,4 @@
-import {CellState, ChessDesk, DeskBackground, IChessCellProps} from "./Types.ts";
+import {CellState, ChessDesk, DeskBackground, IChessCellProps, ParsedCell} from "./Types.ts";
 
 export enum CellFigure {
     PAWN = 0, //пешка
@@ -25,18 +25,25 @@ export enum HelperCell {
 const altFiguresList: string[] = ["bishop", "bishop", "knight", "knight", "rook", "rook", "queen"];
 
 
+export const createEmptyDesk = () => {
+    const desk = new Array(8).fill(null).map(() => new Array(8).fill(null));
+    return desk
+}
+
+export const createDeskSkeleton = (len: number, fill: boolean | CellState): (boolean | CellState)[][] => {
+    return new Array(len).fill(null).map(() => {
+        return new Array(len).fill(null).map(() => fill)
+    })
+}
+
 /**
  * Ф-ция создает стартовую игровую доску с полным набором фигур
  * @returns ChessDesk
  */
 export function createStartDesk(): ChessDesk {
-    const desk: ChessDesk = new Array(8).fill(0).map(() => { // тут подразумевается 8 горизонтальных линий
-        return new Array(8).fill(0).map(() => { // тут подразумевается 8 клеток в линии
-            return {
-                status: CellStatus.EMPTY
-            }
-        })
-    });
+
+    const desk = createDeskSkeleton(8, {status: CellStatus.EMPTY})
+
     for (let i = 0; i < 8; i++) {
         desk[1][i] = {
             status: CellStatus.WHITE,
@@ -102,7 +109,7 @@ export function createStartDesk(): ChessDesk {
                 break;
         }
     }
-    return desk;
+    return <CellState[][]>desk;
 }
 
 
@@ -114,17 +121,12 @@ export function createStartDesk(): ChessDesk {
  */
 export function getRotatedDesk(desk: ChessDesk, isWhiteGamer: boolean): ChessDesk {
     if (isWhiteGamer) {
-        const desk2: ChessDesk = new Array(8).fill(0).map((): CellState[] => { // тут подразумевается 8 горизонтальных линий
-            return new Array(8).fill(0).map((): CellState => { // тут подразумевается 8 клеток в линии
-                return {
-                    status: CellStatus.EMPTY
-                }
-            })
-        });
+        const desk2: (boolean | CellState)[][] = createDeskSkeleton(8, {status: CellStatus.EMPTY})
+
         for (let i = 0; i < 8; i++) {
             desk2[7 - i] = [...desk[i]];
         }
-        return desk2;
+        return <ChessDesk>desk2;
     }
     return desk;
 }
@@ -135,21 +137,18 @@ export function getRotatedDesk(desk: ChessDesk, isWhiteGamer: boolean): ChessDes
  * @returns DeskBackground
  */
 export function getRotatedBackground(isWhiteGamer: boolean): DeskBackground {
-    const proto: DeskBackground = new Array(8).fill(0).map((): boolean[] => { // тут подразумевается 8 горизонтальных линий
-        return new Array(8).fill(0).map((): boolean => { // тут подразумевается 8 клеток в линии
-            return false;
-        })
-    });
+    const proto: (boolean | CellState)[][] = createDeskSkeleton(8, false)
+
     for (let row = 0; row < 8; row++) {
         for (let cell = 0; cell < 8; cell++) {
-            if (row % 2 != (isWhiteGamer ? 1 : 0)) {
-                proto[row][cell] = cell % 2 != 0;
+            if (row % 2 !== (isWhiteGamer ? 1 : 0)) {
+                proto[row][cell] = cell % 2 !== 0;
             } else {
-                proto[row][cell] = cell % 2 == 0
+                proto[row][cell] = cell % 2 === 0
             }
         }
     }
-    return proto
+    return <DeskBackground>proto
 }
 
 
@@ -160,7 +159,7 @@ export function getRotatedBackground(isWhiteGamer: boolean): DeskBackground {
  * @param shouldRotate
  * @returns IChessCellProps[][]
  */
-export function getRenderSource(desk: ChessDesk, shouldRotate: boolean = true,  isWhiteGamer: boolean = true): IChessCellProps[][] {
+export function getRenderSource(desk: ChessDesk, shouldRotate: boolean = true, isWhiteGamer: boolean = true): IChessCellProps[][] {
     const result: IChessCellProps[][] = [];
     result[0] = [
         {cellType: HelperCell.EMPTY_ANGLE, x: 0, y: 0},
@@ -335,7 +334,177 @@ export const getRandomDesk = (): ChessDesk => {
             matrix[row][col] = randomArr[counter++];
         }
     }
-
     return matrix
 }
 
+export const parseClickedCell = (/*firstStep: IChessCellProps,*/ secondStep: IChessCellProps, isTakeFigure?: boolean): ParsedCell => {
+    const letters: string = ' abcdefgh '
+    const indexes = secondStep.data?.status === CellStatus.BLACK ? ' 12345678 ' : ' 87654321 ';
+    let parsedCellInfo: string = '';
+    switch (secondStep.data?.figure) {
+        case CellFigure.PAWN:
+            break
+        case CellFigure.KING:
+            parsedCellInfo += 'K';
+            break;
+        case CellFigure.QUEEN:
+            parsedCellInfo += 'Q';
+            break;
+        case CellFigure.ROOK:
+            parsedCellInfo += 'R';
+            break;
+        case CellFigure.KNIGHT:
+            parsedCellInfo += 'N';
+            break;
+        case CellFigure.BISHOP:
+            parsedCellInfo += 'B';
+            break;
+    }
+
+    if (isTakeFigure) {
+        return {
+            /*notation: secondStep.data?.figure === CellFigure.PAWN ?
+                `${letters[firstStep.x]}${letters[secondStep.x]}` :
+                `${parsedCellInfo}:${letters[secondStep.x]}${indexes[secondStep.y]}`,*/
+            notation: `${parsedCellInfo}:${letters[secondStep.x]}${indexes[secondStep.y]}`,
+            prevX: secondStep.prevX,
+            prevY: secondStep.prevY,
+            x: secondStep.x,
+            y: secondStep.y
+        }
+    } else {
+        return {
+            notation: `${parsedCellInfo}${letters[secondStep.x]}${indexes[secondStep.y]}`,
+            prevX: secondStep.prevX,
+            prevY: secondStep.prevY,
+            x: secondStep.x,
+            y: secondStep.y
+        }
+    }
+}
+
+export const getFigure = (notation: string): CellFigure => {
+    if (notation.length === 2 || notation[0] === ':') {
+        return CellFigure.PAWN
+    } else {
+        switch (notation[0]){
+            case 'K':
+                return CellFigure.KING;
+            case 'Q':
+                return CellFigure.QUEEN;
+            case 'R':
+                return CellFigure.ROOK;
+            case 'N':
+                return CellFigure.KNIGHT;
+            case 'B':
+                return CellFigure.BISHOP;
+            default:
+                throw new Error(`Unknown figure notation: ${notation[0]}`);
+        }
+    }
+}
+
+const getCellAdress = (notation: string, isWhiteGamer: boolean) => {
+
+}
+
+export const stepsConventor = (steps: ParsedCell[], isWhiteGamer: boolean): IChessCellProps[] => {
+    if (!steps || steps.length === 0) {
+        console.log('Steps array is empty.');
+        return [];
+    }
+    const convertedSteps: IChessCellProps[] = [];
+
+    const backgrounds: DeskBackground = getRotatedBackground(isWhiteGamer);
+
+    for (let i = 0; i < steps.length; i++) {
+        if (i % 2 !== 0) {
+            convertedSteps.push({
+                isBlackBackground: backgrounds[steps[i].y-1][steps[i].x],
+                data: {
+                    status: CellStatus.WHITE,
+                    figure: getFigure(steps[i].notation),
+                },
+                cellType: HelperCell.REGULAR,
+                x: steps[i].x,
+                y: steps[i].y,
+                // prevX: steps[i].prevX,
+                // prevY: steps[i].prevY,
+            });
+        } else if (i % 2 === 0) {
+            convertedSteps.push({
+                isBlackBackground: backgrounds[steps[i].y][steps[i].x],
+                data: {
+                    status: CellStatus.BLACK,
+                    figure: getFigure(steps[i].notation),
+                },
+                cellType: HelperCell.REGULAR,
+                x: steps[i].x,
+                y: steps[i].y,
+                // prevX: steps[i].prevX,
+                // prevY: steps[i].prevY,
+            });
+        } else {
+            throw new Error(`Unknown figure notation`);
+        }
+    }
+    return convertedSteps;
+}
+
+/*const getBackground = (x, y, prevX, prevY) => {
+
+}*/
+
+/*export const historyController = (counter: number, steps: ParsedCell[], eaten: ParsedCell[], desk: IChessCellProps[][], isWhiteGamer: boolean) => {
+
+    const convertedSteps: IChessCellProps[] = stepsConventor([...steps], isWhiteGamer);
+    const convertedEaten: IChessCellProps[] = stepsConventor([...eaten], isWhiteGamer)
+
+    const move: IChessCellProps = convertedSteps[counter];
+
+    const eatenFigure: IChessCellProps = convertedEaten[counter - 1];
+
+    console.log(steps[counter - 1].notation.includes(":"))
+    if(steps[counter - 1].notation.includes(":")) {
+        desk[move.x][move.y] = move;
+        desk[eatenFigure.x][eatenFigure.y] = eatenFigure;
+    } else {
+        console.log(convertedSteps[counter])
+        console.log(move)
+
+        if (isWhiteGamer) {
+            desk[move.y][move.x]= {
+                ...move,
+                data: {
+                    status: CellStatus.EMPTY
+                }
+            };
+
+            desk[move.prevX!][move.prevY!] = {
+                ...move,
+                data: {
+                    status: CellStatus.WHITE,
+                    figure: convertedSteps[counter].data!.figure
+                }
+            };
+        } else {
+            desk[move.y][move.x]= {
+                ...move,
+                data: {
+                    status: CellStatus.EMPTY
+                }
+            };
+
+            desk[move.prevY!][move.prevX!] = {
+                ...move,
+                data: {
+                    status: CellStatus.BLACK,
+                    figure: convertedSteps[counter].data!.figure
+                }
+            };
+        }
+
+
+
+    }
+}*/

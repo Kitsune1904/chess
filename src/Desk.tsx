@@ -1,68 +1,100 @@
-import React, {useCallback, useContext, useMemo, useState} from "react";
-import { CellStatus } from "./chess_core.ts";
+import React, {useCallback, useContext, useMemo} from "react";
+import {CellStatus, createEmptyDesk, parseClickedCell} from "./chess_core.ts";
 import {GeneralContext, GeneralContextType} from "./App.tsx";
 import {ChessCell} from "./ChessCell.tsx";
 import {IChessCellProps, IDeskProps} from "./Types.ts";
 
 
+
+
 export const Desk = (props: IDeskProps): React.ReactNode => {
     const gamerSettings: GeneralContextType = useContext(GeneralContext)!;
-    const [selectedCell, setSelectedCell] = useState<IChessCellProps | null>(null);
+
 
     const currentPlayerColor: CellStatus.WHITE | CellStatus.BLACK = useMemo(() =>
         gamerSettings.gamerIsWhiteColor ?
             CellStatus.WHITE :
             CellStatus.BLACK
         , [gamerSettings.gamerIsWhiteColor]);
-    console.log(currentPlayerColor)
-    /*useEffect((): void => {
-        setSources(getRenderSource(props.desk, gamerSettings.gamerIsWhiteColor));
-    }, [props.desk, gamerSettings.gamerIsWhiteColor]);*/
 
     const handleCellClick = useCallback((cell: IChessCellProps) => {
-        const clickedFigureStatus: CellStatus = cell.data!.status
-        console.log(currentPlayerColor)
+        const clickedFigureStatus: CellStatus = cell.data!.status;
 
-        if (selectedCell) {
+        if (gamerSettings.selectedCell) {
             const targetFigureStatus: CellStatus= cell.data!.status;
-            const isSamePosition: boolean = selectedCell.x === cell.x && selectedCell.y === cell.y;
+            const isSamePosition: boolean = gamerSettings.selectedCell.x === cell.x && gamerSettings.selectedCell.y === cell.y;
 
             if (isSamePosition) {
-                setSelectedCell(null);
-            } else if (selectedCell.data?.status === currentPlayerColor && (targetFigureStatus !== currentPlayerColor || cell.data?.status === CellStatus.EMPTY)) {
+                gamerSettings.setSelectedCell(null);
+            } else if (gamerSettings.selectedCell.data?.status === currentPlayerColor && (targetFigureStatus !== currentPlayerColor || cell.data?.status === CellStatus.EMPTY)) {
                 const updatedSources: IChessCellProps[][] = [...props.sources];
-                updatedSources[selectedCell.y][selectedCell.x] = {
-                    ...selectedCell,
-                    data: { 
-                        status: CellStatus.EMPTY 
+
+                if(targetFigureStatus !== currentPlayerColor && cell.data?.status !== CellStatus.EMPTY) {
+                    gamerSettings.setStep([...gamerSettings.steps, parseClickedCell(/*selectedCell,*/ {...cell,
+                        data: gamerSettings.selectedCell.data,
+                        // prevX: gamerSettings.selectedCell.x,
+                        // prevY: gamerSettings.selectedCell.y
+                    }, true)]);
+
+                    console.log(gamerSettings.steps)
+
+                    targetFigureStatus !== currentPlayerColor &&
+                    gamerSettings.setEatenFigure([...gamerSettings.eatenFigures, parseClickedCell({...cell,
+                        data: cell.data,
+                        //
+                        // prevX: gamerSettings.selectedCell.x,
+                        // prevY: gamerSettings.selectedCell.y
+                    }, true)]);
+                    console.log(props.sources[gamerSettings.selectedCell.y][gamerSettings.selectedCell.x]);
+                    console.log(props.sources[cell.y][cell.x]);
+                } else {
+                    gamerSettings.setStep([...gamerSettings.steps, parseClickedCell(/*cell,*/{...cell,
+                        data: gamerSettings.selectedCell.data,
+                        // prevX: gamerSettings.selectedCell.x,
+                        // prevY: gamerSettings.selectedCell.y
+                    }, false)])
+
+                    console.log(gamerSettings.steps)
+
+                }
+
+                updatedSources[gamerSettings.selectedCell.y][gamerSettings.selectedCell.x] = {
+                    ...gamerSettings.selectedCell,
+                    data: {
+                        status: CellStatus.EMPTY
                     }
                 };
                 updatedSources[cell.y][cell.x] = {
                     ...cell,
-                    data: selectedCell.data
+                    data: gamerSettings.selectedCell.data
                 };
 
                 const deskData = [...props.sources];
-                const desk = new Array(8).fill(null).map(() => new Array(8).fill(null));
+                const desk = createEmptyDesk();
                 for (let col = 1; col < 9; col++) {
                     for (let row = 1; row < 9; row++) {
                         desk[col-1][row-1] = deskData[col][row].data;
                     }
                 }
-                console.log(desk)
-                gamerSettings.setDeskMemory(desk)
-/*
-                props.setSources(getRenderSource(desk,false));
-*/
-                setSelectedCell(null);
+                // console.log(desk);
 
+
+                gamerSettings.setCounter(gamerSettings.steps.length + 1)
+                gamerSettings.setDeskMemory(desk);
+                gamerSettings.setSelectedCell(null);
+                /*setStep([...steps, parseClickedCell({...cell,
+                    data: selectedCell.data})])*/
             } else {
-                setSelectedCell(null);
+                gamerSettings.setSelectedCell(null);
             }
         } else if (clickedFigureStatus === currentPlayerColor) {
-            setSelectedCell(cell);
+            gamerSettings.setSelectedCell(cell);
         }
-    }, [selectedCell, currentPlayerColor, props, gamerSettings]);
+
+    }, [gamerSettings.selectedCell, currentPlayerColor, props, gamerSettings.steps, gamerSettings.eatenFigures]);
+
+    console.log(gamerSettings.steps);
+    console.log(gamerSettings.eatenFigures);
 
     return (
         <div style={{
@@ -79,7 +111,7 @@ export const Desk = (props: IDeskProps): React.ReactNode => {
                     return (
                         <ChessCell {...cell}
                                    key={index * 10 + index2}
-                                   isHighlighted={selectedCell?.x === cell.x && selectedCell?.y === cell.y}
+                                   isHighlighted={gamerSettings.selectedCell?.x === cell.x && gamerSettings.selectedCell?.y === cell.y}
                                    onClick={() => handleCellClick(cell)}
                         />
                     )
